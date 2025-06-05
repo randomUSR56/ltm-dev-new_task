@@ -1,0 +1,1271 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: luczialex@gmail.com
+    name: Luczi Alex
+  description: API a bcknddm adatbázis tábláinak kezeléséhez. Generálva a backnddbcreate.sql
+    alapján.
+  title: Bcknddm API
+  version: 1.0.0
+servers:
+- url: http://localhost:3000/api/v1
+security:
+- ApiKulcsAuth: []
+tags:
+- description: Felhasználók kezelésével kapcsolatos műveletek
+  name: Felhasználó
+- description: Feladatok kezelésével kapcsolatos műveletek
+  name: Feladat
+- description: Képek kezelésével kapcsolatos műveletek
+  name: Kép
+- description: Összerendelések kezelésével kapcsolatos műveletek
+  name: Összerendelés
+- description: Feladatmegoldások kezelésével kapcsolatos műveletek
+  name: Megoldás
+paths:
+  /felhasznalo:
+    get:
+      description: Lekérdezi az összes felhasználó adatait az adatbázisból.
+      operationId: getAllUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Felhasznalo'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes felhasználó listázása
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+    post:
+      description: Létrehoz egy új felhasználót a megadott adatokkal.
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FelhasznaloInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Felhasznalo'
+          description: Felhasználó sikeresen létrehozva
+      summary: Új felhasználó létrehozása
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+  /felhasznalo/{flhsznl_id}:
+    delete:
+      description: Eltávolít egy felhasználót a rendszerből a megadott azonosító alapján.
+      operationId: deleteUser
+      parameters:
+      - description: A felhasználó egyedi azonosítója.
+        explode: false
+        in: path
+        name: flhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Felhasználó sikeresen törölve
+        "404":
+          description: Felhasználó nem található
+      summary: Adott felhasználó törlése ID alapján
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+    get:
+      description: Visszaadja egy adott azonosítójú felhasználó részletes adatait.
+      operationId: getUserById
+      parameters:
+      - description: A felhasználó egyedi azonosítója.
+        explode: false
+        in: path
+        name: flhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Felhasznalo'
+          description: Sikeres lekérdezés
+        "404":
+          description: Felhasználó nem található
+      summary: Adott felhasználó lekérdezése ID alapján
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+    put:
+      description: Frissíti egy meglévő felhasználó adatait a megadott értékekkel.
+      operationId: updateUser
+      parameters:
+      - description: A felhasználó egyedi azonosítója.
+        explode: false
+        in: path
+        name: flhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FelhasznaloInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Felhasznalo'
+          description: Felhasználó sikeresen frissítve
+        "404":
+          description: Felhasználó nem található
+      summary: Adott felhasználó frissítése ID alapján
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+  /login:
+    post:
+      description: Bejelentkezés email és jelszó alapján. Sikeres bejelentkezés esetén
+        visszaadja a felhasználó apikulcs-át.
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/loginUser_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/loginUser_200_response'
+          description: Sikeres bejelentkezés
+        "401":
+          description: Hibás email vagy jelszó
+      security: []
+      summary: Felhasználó bejelentkezés
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+  /felhasznalo/me:
+    get:
+      description: Returns details of the authenticated user via API key
+      operationId: getCurrentUser
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Felhasznalo'
+          description: User details retrieved
+        "401":
+          description: Invalid/Missing API key
+      summary: Get current user details
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+  /felhasznalo/signout:
+    post:
+      description: "Invalidate the user's API key, logging them out."
+      operationId: signOutUser
+      responses:
+        "204":
+          description: Sikeres kijelentkezés (No Content)
+        "401":
+          description: Nem hitelesített felhasználó
+      security:
+      - ApiKulcsAuth: []
+      summary: Felhasználó kijelentkezés (signout)
+      tags:
+      - Felhasználó
+      x-eov-operation-handler: controllers/FelhasznlController
+  /feladat:
+    get:
+      description: Lekérdezi az összes feladatot az adatbázisból.
+      operationId: listTasks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Feladat'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes feladat listázása
+      tags:
+      - Feladat
+      x-eov-operation-handler: controllers/FeladatController
+    post:
+      description: Új feladatot hoz létre a megadott adatokkal.
+      operationId: createTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeladatInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feladat'
+          description: Feladat sikeresen létrehozva
+      summary: Új feladat létrehozása
+      tags:
+      - Feladat
+      x-eov-operation-handler: controllers/FeladatController
+  /feladat/{fldt_id}:
+    delete:
+      description: Egy feladat törlése a megadott azonosító alapján.
+      operationId: deleteTask
+      parameters:
+      - description: A feladat egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldt_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Feladat sikeresen törölve
+        "404":
+          description: Feladat nem található
+      summary: Adott feladat törlése ID alapján
+      tags:
+      - Feladat
+      x-eov-operation-handler: controllers/FeladatController
+    get:
+      description: Egy adott azonosítójú feladat részletes adatainak lekérdezése.
+      operationId: getTaskById
+      parameters:
+      - description: A feladat egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldt_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feladat'
+          description: Sikeres lekérdezés
+        "404":
+          description: Feladat nem található
+      summary: Adott feladat lekérdezése ID alapján
+      tags:
+      - Feladat
+      x-eov-operation-handler: controllers/FeladatController
+    put:
+      description: Egy meglévő feladat adatainak frissítése a megadott értékekkel.
+      operationId: updateTask
+      parameters:
+      - description: A feladat egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldt_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeladatInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feladat'
+          description: Feladat sikeresen frissítve
+        "404":
+          description: Feladat nem található
+      summary: Adott feladat frissítése ID alapján
+      tags:
+      - Feladat
+      x-eov-operation-handler: controllers/FeladatController
+  /fldtkep:
+    get:
+      description: "Lekérdezi az összes képet, amelyek feladatokhoz tartoznak."
+      operationId: listPictures
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Fldtkep'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes feladat kép listázása
+      tags:
+      - Kép
+      x-eov-operation-handler: controllers/KpController
+    post:
+      description: Új képet tölt fel egy feladathoz base64 formátumban.
+      operationId: createPicture
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtkepInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkep'
+          description: Kép sikeresen létrehozva
+      summary: Új feladat kép létrehozása
+      tags:
+      - Kép
+      x-eov-operation-handler: controllers/KpController
+  /fldtkep/{fldtkep_id}:
+    delete:
+      description: Egy kép törlése az azonosító alapján.
+      operationId: deletePicture
+      parameters:
+      - description: A kép egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkep_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Kép sikeresen törölve
+        "404":
+          description: Kép nem található
+      summary: Adott kép törlése ID alapján
+      tags:
+      - Kép
+      x-eov-operation-handler: controllers/KpController
+    get:
+      description: Egy adott azonosítójú kép adatainak lekérdezése.
+      operationId: getPictureById
+      parameters:
+      - description: A kép egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkep_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkep'
+          description: Sikeres lekérdezés
+        "404":
+          description: Kép nem található
+      summary: Adott kép lekérdezése ID alapján
+      tags:
+      - Kép
+      x-eov-operation-handler: controllers/KpController
+    put:
+      description: Egy meglévő kép adatainak frissítése base64 formátumban.
+      operationId: updatePicture
+      parameters:
+      - description: A kép egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkep_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtkepInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkep'
+          description: Kép sikeresen frissítve
+        "404":
+          description: Kép nem található
+      summary: Adott kép frissítése ID alapján
+      tags:
+      - Kép
+      x-eov-operation-handler: controllers/KpController
+  /fldtkp:
+    get:
+      description: Lekérdezi az összes feladathoz tartozó kép összerendelést az adatbázisból.
+      operationId: listTaskImageMappings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Fldtkp'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes feladat-kép összerendelés listázása
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    post:
+      description: Létrehoz egy új kapcsolatot egy feladat és egy kép között az adatbázisban.
+      operationId: createTaskImageMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtkpInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkp'
+          description: Összerendelés sikeresen létrehozva
+      summary: Új feladat-kép összerendelés létrehozása
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+  /fldtkp/{fldtkp_id}:
+    delete:
+      description: Egy feladat és kép közötti összerendelés törlése az adatbázisból.
+      operationId: deleteTaskImageMapping
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkp_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Összerendelés sikeresen törölve
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés törlése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    get:
+      description: Egy konkrét feladat-kép összerendelés adatainak lekérdezése azonosító
+        alapján.
+      operationId: getTaskImageMappingById
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkp_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkp'
+          description: Sikeres lekérdezés
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés lekérdezése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    put:
+      description: Egy meglévő feladat-kép kapcsolat módosítása az adatbázisban.
+      operationId: updateTaskImageMapping
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtkp_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtkpInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtkp'
+          description: Összerendelés sikeresen frissítve
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés frissítése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+  /fldtflhsznl:
+    get:
+      description: Lekérdezi az összes feladat-felhasználó összerendelést az adatbázisból.
+      operationId: listTaskUserMappings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/FldtFlhsznl'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes feladat-felhasználó összerendelés listázása
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    post:
+      description: Létrehoz egy új kapcsolatot egy feladat és egy felhasználó között
+        az adatbázisban.
+      operationId: createTaskUserMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtFlhsznlInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FldtFlhsznl'
+          description: Összerendelés sikeresen létrehozva
+      summary: Új feladat-felhasználó összerendelés létrehozása
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+  /fldtflhsznl/{fldtflhsznl_id}:
+    delete:
+      description: Egy feladat és felhasználó közötti kapcsolat törlése az adatbázisból.
+      operationId: deleteTaskUserMapping
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtflhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Összerendelés sikeresen törölve
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés törlése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    get:
+      description: Egy konkrét feladat-felhasználó összerendelés adatainak lekérdezése
+        azonosító alapján.
+      operationId: getTaskUserMappingById
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtflhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FldtFlhsznl'
+          description: Sikeres lekérdezés
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés lekérdezése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+    put:
+      description: Egy meglévő feladat-felhasználó kapcsolat módosítása az adatbázisban.
+      operationId: updateTaskUserMapping
+      parameters:
+      - description: Az összerendelés egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtflhsznl_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtFlhsznlInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FldtFlhsznl'
+          description: Összerendelés sikeresen frissítve
+        "404":
+          description: Összerendelés nem található
+      summary: Adott összerendelés frissítése ID alapján
+      tags:
+      - Összerendelés
+      x-eov-operation-handler: controllers/SszerendelsController
+  /fldtmegoldas:
+    get:
+      description: Lekérdezi az összes feladathoz tartozó megoldást az adatbázisból.
+      operationId: listSolutions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Fldtmegoldas'
+                type: array
+          description: Sikeres lekérdezés
+      summary: Összes feladatmegoldás listázása
+      tags:
+      - Megoldás
+      x-eov-operation-handler: controllers/MegoldsController
+    post:
+      description: Létrehoz egy új feladat megoldást a megadott adatokkal.
+      operationId: createSolution
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtmegoldasInput'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtmegoldas'
+          description: Megoldás sikeresen létrehozva
+      summary: Új feladatmegoldás létrehozása
+      tags:
+      - Megoldás
+      x-eov-operation-handler: controllers/MegoldsController
+  /fldtmegoldas/{fldtmglds_id}:
+    delete:
+      description: Egy feladatmegoldás törlése az adatbázisból az azonosító alapján.
+      operationId: deleteSolution
+      parameters:
+      - description: A megoldás egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtmglds_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Megoldás sikeresen törölve
+        "404":
+          description: Megoldás nem található
+      summary: Adott megoldás törlése ID alapján
+      tags:
+      - Megoldás
+      x-eov-operation-handler: controllers/MegoldsController
+    get:
+      description: Egy adott azonosítójú feladatmegoldás részletes adatainak lekérdezése.
+      operationId: getSolutionById
+      parameters:
+      - description: A megoldás egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtmglds_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtmegoldas'
+          description: Sikeres lekérdezés
+        "404":
+          description: Megoldás nem található
+      summary: Adott megoldás lekérdezése ID alapján
+      tags:
+      - Megoldás
+      x-eov-operation-handler: controllers/MegoldsController
+    put:
+      description: Egy meglévő feladatmegoldás adatainak frissítése a megadott értékekkel.
+      operationId: updateSolution
+      parameters:
+      - description: A megoldás egyedi azonosítója.
+        explode: false
+        in: path
+        name: fldtmglds_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FldtmegoldasInput'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fldtmegoldas'
+          description: Megoldás sikeresen frissítve
+        "404":
+          description: Megoldás nem található
+      summary: Adott megoldás frissítése ID alapján
+      tags:
+      - Megoldás
+      x-eov-operation-handler: controllers/MegoldsController
+components:
+  schemas:
+    GeoPoint:
+      properties:
+        type:
+          default: Point
+          enum:
+          - Point
+          type: string
+        coordinates:
+          items:
+            format: double
+            type: number
+          maxItems: 2
+          minItems: 2
+          type: array
+      required:
+      - coordinates
+      - type
+      type: object
+    Felhasznalo:
+      description: tábla a felhasználóknak.
+      example:
+        Belephet: true
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        jelszo: jelszo
+        modositas: 2000-01-23T04:56:07.000+00:00
+        flhsznl_id: 0
+        apikulcs: apikulcs
+        Lejar: 2000-01-23T04:56:07.000+00:00
+        nev: nev
+        email: email
+      properties:
+        flhsznl_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        nev:
+          description: neve.
+          maxLength: 500
+          type: string
+        email:
+          description: emailcíme.
+          format: email
+          maxLength: 500
+          type: string
+        jelszo:
+          description: "jelszo (a teszt alatt txt-ben, egyébkén hash sózva)."
+          format: password
+          maxLength: 254
+          type: string
+          writeOnly: true
+        apikulcs:
+          description: 60 karakter 10 csoportban kötőjelekkel elválsztva.
+          maxLength: 128
+          readOnly: true
+          type: string
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        modositas:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        Lejar:
+          description: évhónapnap 23 óra 59 perc 59 másodperc.
+          format: date-time
+          type: string
+        Belephet:
+          description: "Megadja, hogy a felhasználó beléphet-e."
+          type: boolean
+      required:
+      - email
+      - nev
+      type: object
+    FelhasznaloInput:
+      description: Felhasználó adatok létrehozáshoz vagy módosításhoz.
+      example:
+        Belephet: true
+        jelszo: jelszo
+        Lejar: 2000-01-23T04:56:07.000+00:00
+        nev: nev
+        email: email
+      properties:
+        nev:
+          description: neve.
+          maxLength: 500
+          type: string
+        email:
+          description: emailcíme.
+          format: email
+          maxLength: 500
+          type: string
+        jelszo:
+          description: "jelszo (a teszt alatt txt-ben, egyébkén hash sózva)."
+          format: password
+          maxLength: 254
+          type: string
+        Lejar:
+          description: évhónapnap 23 óra 59 perc 59 másodperc.
+          format: date-time
+          type: string
+        Belephet:
+          description: "Megadja, hogy a felhasználó beléphet-e."
+          type: boolean
+      required:
+      - email
+      - jelszo
+      - nev
+      type: object
+    Feladat:
+      description: tábla a feladatoknak.
+      example:
+        gps_koordinata: ""
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        rovidnev: rovidnev
+        leiras: leiras
+        eov_koordinata: ""
+        fldt_id: 0
+        hatarido: 2000-01-23T04:56:07.000+00:00
+      properties:
+        fldt_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        rovidnev:
+          description: rövidnév.
+          maxLength: 255
+          type: string
+        leiras:
+          description: részletes leírás.
+          type: string
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        hatarido:
+          description: évhónapnaóraperc 00 másodperc.
+          format: date-time
+          type: string
+        gps_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "GPS koordináta (Point, 4326)."
+          nullable: true
+        eov_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "EOV koordináta (Point, 23700)."
+          nullable: true
+      required:
+      - rovidnev
+      type: object
+    FeladatInput:
+      description: Feladat adatok létrehozáshoz vagy módosításhoz.
+      example:
+        gps_koordinata: ""
+        rovidnev: rovidnev
+        leiras: leiras
+        eov_koordinata: ""
+        hatarido: 2000-01-23T04:56:07.000+00:00
+      properties:
+        rovidnev:
+          description: rövidnév.
+          maxLength: 255
+          type: string
+        leiras:
+          description: részletes leírás.
+          type: string
+        hatarido:
+          description: évhónapnaóraperc 00 másodperc.
+          format: date-time
+          type: string
+        gps_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "GPS koordináta (Point, 4326)."
+          nullable: true
+        eov_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "EOV koordináta (Point, 23700)."
+          nullable: true
+      required:
+      - rovidnev
+      type: object
+    Fldtkep:
+      description: tábla a feladatokhoz tartozó képeknek.
+      example:
+        gps_koordinata: ""
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        meret: 6
+        fajlnev: fajlnev
+        leiras: leiras
+        eov_koordinata: ""
+        adat: adat
+        bekuldo: 1
+        fldtkep_id: 0
+        keszult: 2000-01-23T04:56:07.000+00:00
+      properties:
+        fldtkep_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        adat:
+          description: maga a kép base64 kódolással tárolva.
+          format: byte
+          type: string
+        fajlnev:
+          description: kép teljes neve.
+          maxLength: 255
+          type: string
+        meret:
+          description: byteban.
+          readOnly: true
+          type: integer
+        leiras:
+          description: hozzátartozó leírás.
+          type: string
+        keszult:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          type: string
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        gps_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "a hely gps koordinátája, ha van (Point, 4326)."
+          nullable: true
+        eov_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "a hely eov koordinátálya ha van (Point, 23700)."
+          nullable: true
+        bekuldo:
+          description: felhasznló id (referencia Felhasznalo.flhsznl_id).
+          type: integer
+      required:
+      - bekuldo
+      - fajlnev
+      type: object
+    FldtkepInput:
+      description: Kép adatok létrehozáshoz vagy módosításhoz.
+      example:
+        gps_koordinata: ""
+        fajlnev: fajlnev
+        leiras: leiras
+        eov_koordinata: ""
+        adat: adat
+        bekuldo: 0
+        keszult: 2000-01-23T04:56:07.000+00:00
+      properties:
+        adat:
+          description: maga a kép base64 kódolással.
+          format: byte
+          type: string
+        fajlnev:
+          description: kép teljes neve.
+          maxLength: 255
+          type: string
+        leiras:
+          description: hozzátartozó leírás.
+          type: string
+        keszult:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          type: string
+        gps_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "a hely gps koordinátája, ha van (Point, 4326)."
+          nullable: true
+        eov_koordinata:
+          allOf:
+          - $ref: '#/components/schemas/GeoPoint'
+          description: "a hely eov koordinátálya ha van (Point, 23700)."
+          nullable: true
+        bekuldo:
+          description: felhasznló id (referencia Felhasznalo.flhsznl_id).
+          type: integer
+      required:
+      - adat
+      - bekuldo
+      - fajlnev
+      type: object
+    Fldtkp:
+      description: "feladat kép összerendelés egy feladat több kép, egy kép több feladat."
+      example:
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        fldtkp_id: 0
+        modositas: 2000-01-23T04:56:07.000+00:00
+        fldt_id: 6
+        fldtkep_id: 1
+      properties:
+        fldtkp_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        fldt_id:
+          description: a feladat azonosítója (referencia Feladat.fldt_id).
+          type: integer
+        fldtkep_id:
+          description: a kép azonosítója (referencia Fldtkep.fldtkep_id).
+          type: integer
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        modositas:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+      required:
+      - fkep_id
+      - fldt_id
+      type: object
+    FldtkpInput:
+      description: Feladat-Kép összerendelés adatok.
+      example:
+        fldt_id: 0
+        fkep_id: 6
+      properties:
+        fldt_id:
+          description: a feladat azonosítója.
+          type: integer
+        fkep_id:
+          description: a kép azonosítója.
+          type: integer
+      required:
+      - fkep_id
+      - fldt_id
+      type: object
+    FldtFlhsznl:
+      description: feladat felhasználó összerendelés.
+      example:
+        fonok: true
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        modositas: 2000-01-23T04:56:07.000+00:00
+        fldtflhsznl_id: 0
+        fldt_id: 6
+        flhsznl_id: 1
+      properties:
+        fldtflhsznl_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        fldt_id:
+          description: feladat azonosító (referencia Feladat.fldt_id).
+          type: integer
+        flhsznl_id:
+          description: felhasznalo azonositó (referencia Felhasznalo.flhsznl_id).
+          type: integer
+        fonok:
+          description: egy feladatnál 1 fönök lehet!.
+          type: boolean
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        modositas:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+      required:
+      - fldt_id
+      - flhsznl_id
+      - fonok
+      type: object
+    FldtFlhsznlInput:
+      description: Feladat-Felhasználó összerendelés adatok.
+      example:
+        fonok: true
+        fldt_id: 0
+        flhsznl_id: 6
+      properties:
+        fldt_id:
+          description: feladat azonosító.
+          type: integer
+        flhsznl_id:
+          description: felhasznalo azonositó.
+          type: integer
+        fonok:
+          description: egy feladatnál 1 fönök lehet!.
+          type: boolean
+      required:
+      - fldt_id
+      - flhsznl_id
+      - fonok
+      type: object
+    Fldtmegoldas:
+      description: feladatmegoldásokat tartalmazó tábla.
+      example:
+        letrejott: 2000-01-23T04:56:07.000+00:00
+        fldtmglds_id: 0
+        elfogado: 1
+        modositas: 2000-01-23T04:56:07.000+00:00
+        leiras: leiras
+        elfogadva: true
+        lejelento: 6
+      properties:
+        fldtmglds_id:
+          description: egyedi azonosító.
+          readOnly: true
+          type: integer
+        leiras:
+          description: megoldas leírása.
+          type: string
+        lejelento:
+          description: felhasznalo azonositó (referencia Felhasznalo.flhsznl_id).
+          type: integer
+        elfogadva:
+          description: "igaz, ha el van fogadva."
+          type: boolean
+        elfogado:
+          description: elfogado felhasznalo azonositó (referencia Felhasznalo.flhsznl_id).
+          nullable: true
+          type: integer
+        letrejott:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+        modositas:
+          description: ezredmásodperc pontosság.
+          format: date-time
+          readOnly: true
+          type: string
+      required:
+      - leiras
+      - lejelento
+      type: object
+    FldtmegoldasInput:
+      description: Feladat megoldás adatok.
+      example:
+        elfogado: 6
+        leiras: leiras
+        elfogadva: true
+        lejelento: 0
+      properties:
+        leiras:
+          description: megoldas leírása.
+          type: string
+        lejelento:
+          description: felhasznalo azonositó (referencia Felhasznalo.flhsznl_id).
+          type: integer
+        elfogadva:
+          description: "igaz, ha el van fogadva."
+          type: boolean
+        elfogado:
+          description: elfogado felhasznalo azonositó (referencia Felhasznalo.flhsznl_id).
+          nullable: true
+          type: integer
+      required:
+      - leiras
+      - lejelento
+      type: object
+    loginUser_request:
+      properties:
+        email:
+          description: Felhasználó email címe
+          format: email
+          type: string
+        jelszo:
+          description: Felhasználó jelszava
+          format: password
+          type: string
+      required:
+      - email
+      - jelszo
+      type: object
+    loginUser_200_response:
+      example:
+        apikulcs: apikulcs
+      properties:
+        apikulcs:
+          description: "A felhasználó API kulcsa, amit a további hívásokhoz haszná\
+            lni kell."
+          type: string
+      type: object
+  securitySchemes:
+    ApiKulcsAuth:
+      in: header
+      name: apikulcs
+      type: apiKey

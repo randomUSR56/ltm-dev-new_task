@@ -1,0 +1,5 @@
+FROM postgis/postgis:16-3.4
+
+ENV POSTGRES_DB=bcknddm
+ENV POSTGRES_USER=psqlab
+ENV POSTGRES_PASSWORD=password
